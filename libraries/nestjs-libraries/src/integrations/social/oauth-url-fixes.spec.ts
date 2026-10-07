@@ -19,6 +19,7 @@
 import { LinkedinProvider } from './linkedin.provider';
 import { FacebookProvider } from './facebook.provider';
 import { InstagramProvider } from './instagram.provider';
+import { LinkedinPageProvider } from './linkedin.page.provider';
 
 const ENV_KEYS = [
   'LINKEDIN_CLIENT_ID',
@@ -72,6 +73,39 @@ describe('OAuth authorization URL fixes', () => {
       );
       expect(url.startsWith('https://www.linkedin.com/oauth/v2/authorization?')).toBe(
         true
+      );
+    });
+  });
+
+  describe('LinkedinProvider scopes (personal profile)', () => {
+    it('only requests scopes available without Community Management API', () => {
+      const provider = new LinkedinProvider();
+
+      expect(provider.scopes).toEqual(['openid', 'profile', 'w_member_social']);
+    });
+
+    it('sends only those scopes in the authorization URL', async () => {
+      process.env.LINKEDIN_CLIENT_ID = 'test-linkedin-client-id';
+
+      const { url } = await new LinkedinProvider().generateAuthUrl();
+
+      expect(url).toContain('scope=openid%20profile%20w_member_social');
+      expect(url).not.toContain('organization');
+    });
+  });
+
+  describe('LinkedinPageProvider#generateAuthUrl', () => {
+    it('does not include prompt=none and keeps the organization scopes', async () => {
+      process.env.LINKEDIN_CLIENT_ID = 'test-linkedin-client-id';
+
+      const { url } = await new LinkedinPageProvider().generateAuthUrl();
+
+      expect(url).not.toContain('prompt=');
+      expect(url).toContain('rw_organization_admin');
+      expect(url).toContain(
+        encodeURIComponent(
+          'https://postiz.example.com/integrations/social/linkedin-page'
+        )
       );
     });
   });

@@ -61,15 +61,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Personal profile posting only needs the self-serve "Share on LinkedIn" and
+  // "Sign In with LinkedIn using OpenID Connect" products. The organization
+  // scopes (r_basicprofile, rw_organization_admin, w_organization_social,
+  // r_organization_social) require the Community Management API, which cannot
+  // coexist with those products on one app and is not available to a regular
+  // self-hosted app, so requesting them here made LinkedIn reject the login
+  // with `unauthorized_scope_error`. LinkedinPageProvider overrides this list
+  // with the full set. See gitroomhq/postiz-app issue #1582.
+  scopes = ['openid', 'profile', 'w_member_social'];
   override maxConcurrentJob = 8; // LinkedIn limits are daily budgets
   refreshWait = true;
   editor = 'normal' as const;
