@@ -448,6 +448,15 @@ export class InstagramProvider
 
   async generateAuthUrl() {
     const state = makeSecureId(6);
+    // Same Meta app/product as FacebookProvider (this flow goes through a
+    // Facebook Page), so it's subject to the same "Facebook Login for
+    // Business" config_id requirement - see the comment in
+    // facebook.provider.ts#generateAuthUrl for details.
+    const configId = process.env.FACEBOOK_LOGIN_CONFIG_ID;
+    const authParams = configId
+      ? `&config_id=${configId}`
+      : `&scope=${encodeURIComponent(this.scopes.join(','))}`;
+
     return {
       url:
         `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
@@ -456,7 +465,7 @@ export class InstagramProvider
           `${process.env.FRONTEND_URL}/integrations/social/instagram`
         )}` +
         `&state=${state}` +
-        `&scope=${encodeURIComponent(this.scopes.join(','))}`,
+        authParams,
       codeVerifier: makeSecureId(10),
       state,
     };

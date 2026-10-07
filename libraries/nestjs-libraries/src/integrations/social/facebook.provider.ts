@@ -300,6 +300,23 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
   async generateAuthUrl() {
     const state = makeSecureId(6);
+    // Meta's "Facebook Login for Business" product (now required for apps
+    // created with a Business use-case - i.e. any app created today that
+    // needs Page permissions) replaces the plain `scope=` parameter with a
+    // `config_id` that points at a Login Configuration created in the Meta
+    // dashboard (App > Facebook Login for Business > Configurations). Apps
+    // that still send `scope=` directly are rejected by Meta with
+    // "Invalid Scopes", even though the scope names themselves are valid -
+    // see gitroomhq/postiz-app discussion #943.
+    //
+    // FACEBOOK_LOGIN_CONFIG_ID is optional so older, non-Business-type apps
+    // (plain "Facebook Login" product) keep working unchanged with the
+    // classic scope-based flow.
+    const configId = process.env.FACEBOOK_LOGIN_CONFIG_ID;
+    const authParams = configId
+      ? `&config_id=${configId}`
+      : `&scope=${this.scopes.join(',')}`;
+
     return {
       url:
         `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
@@ -308,7 +325,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           `${process.env.FRONTEND_URL}/integrations/social/facebook`
         )}` +
         `&state=${state}` +
-        `&scope=${this.scopes.join(',')}`,
+        authParams,
       codeVerifier: makeSecureId(10),
       state,
     };

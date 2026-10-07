@@ -180,9 +180,15 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   async generateAuthUrl() {
     const state = makeSecureId(6);
     const codeVerifier = makeSecureId(30);
+    // NOTE: `prompt=none` was previously hardcoded here. Per LinkedIn's OAuth
+    // docs, `prompt=none` tells LinkedIn to skip the consent screen and fail
+    // silently if the user hasn't already granted consent - which breaks the
+    // very first connection attempt for every new user/installation (see
+    // gitroomhq/postiz-app issues #1580/#1582). The consent screen must be
+    // shown on first connect, so we no longer send this parameter.
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${
       process.env.LINKEDIN_CLIENT_ID
-    }&prompt=none&redirect_uri=${encodeURIComponent(
+    }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/integrations/social/linkedin`
     )}&state=${state}&scope=${encodeURIComponent(this.scopes.join(' '))}`;
     return {
